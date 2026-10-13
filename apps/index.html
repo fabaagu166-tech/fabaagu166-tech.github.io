@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apps CEIP Simón Fuentes</title>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="iconos/icono-32.png">
+  <link rel="apple-touch-icon" href="iconos/icono-180.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a73e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Apps Simón Fuentes">
+  <style>
+    :root { --azul: #1a73e8; --fondo: #f4f6fb; --texto: #202124; --gris: #5f6368; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: var(--fondo); color: var(--texto); }
+    header { background: #fff; padding: 20px 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    header img { width: 96px; height: 96px; border-radius: 18px; }
+    header h1 { margin: 8px 0 0; font-size: 1.4rem; }
+    .controles { max-width: 1000px; margin: 20px auto 0; padding: 0 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .controles input { flex: 1 1 220px; padding: 10px 14px; border: 1px solid #dadce0; border-radius: 24px; font-size: 1rem; }
+    .filtro { padding: 8px 14px; border: 1px solid #dadce0; border-radius: 20px; background: #fff; cursor: pointer; font-size: .9rem; }
+    .filtro.activo { background: var(--azul); color: #fff; border-color: var(--azul); }
+    main { max-width: 1000px; margin: 20px auto; padding: 0 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .tarjeta { display: block; background: #fff; border-radius: 14px; padding: 20px; text-decoration: none; color: inherit;
+               box-shadow: 0 1px 3px rgba(0,0,0,.12); transition: transform .15s, box-shadow .15s; }
+    .tarjeta:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,.15); }
+    .icono { font-size: 2.2rem; }
+    .tarjeta h2 { margin: 10px 0 6px; font-size: 1.1rem; }
+    .tarjeta p { margin: 0; color: var(--gris); font-size: .9rem; }
+    .etiqueta { display: inline-block; margin-top: 12px; font-size: .75rem; padding: 3px 10px; border-radius: 10px; background: #e8f0fe; color: var(--azul); }
+    .vacio { grid-column: 1 / -1; text-align: center; color: var(--gris); }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="iconos/icono-192.png" alt="CEIP Simón Fuentes">
+    <h1>Apps CEIP Simón Fuentes</h1>
+  </header>
+
+  <div class="controles">
+    <input id="buscar" type="search" placeholder="Buscar app…">
+    <div id="filtros"></div>
+  </div>
+
+  <main id="lista"></main>
+
+  <script>
+    /*
+     * LISTA DE APPS. Para añadir una, copia un bloque { ... } y cambia sus datos.
+     *  nombre, descripcion, url (enlace /exec), para (Profesorado, Alumnado, Familias...), icono (emoji)
+     */
+    const APPS = [
+      {
+        nombre: 'Turnos del recreo',
+        descripcion: 'Consulta dónde te toca vigilar en el recreo.',
+        url: 'https://script.google.com/macros/s/AKfycbxBo54GDd1Nw_gN-sruMnIdR2l3dR9oIWDk3Wz_uF_Afx1fODZPx6chY_I2eFZ6ihi4/exec',
+        para: 'Profesorado',
+        icono: '⛹️'
+      },
+      {
+        nombre: 'Sustituciones',
+        descripcion: 'Consulta si hoy te toca sustituir y dónde.',
+        url: 'https://script.google.com/macros/s/AKfycbzUZx49j3yNf89uzUt9Vwfw4YFV5Kln9hCF45dbQDOidcWuYCMTIWGfQkS_4AnJGOuUQA/exec',
+        para: 'Profesorado',
+        icono: '🔄'
+      },
+    ];
+
+    let filtroActual = 'Todas';
+
+    function pintarFiltros() {
+      const grupos = ['Todas', ...new Set(APPS.map(a => a.para).filter(Boolean))];
+      const cont = document.getElementById('filtros');
+      cont.innerHTML = '';
+      if (grupos.length < 3) return; // con un solo grupo no hace falta filtrar
+      grupos.forEach(g => {
+        const b = document.createElement('button');
+        b.className = 'filtro' + (g === filtroActual ? ' activo' : '');
+        b.textContent = g;
+        b.onclick = () => { filtroActual = g; pintarFiltros(); pintarApps(); };
+        cont.appendChild(b);
+      });
+    }
+
+    function pintarApps() {
+      const texto = document.getElementById('buscar').value.toLowerCase();
+      const lista = document.getElementById('lista');
+      lista.innerHTML = '';
+      const visibles = APPS.filter(a =>
+        (filtroActual === 'Todas' || a.para === filtroActual) &&
+        (a.nombre + ' ' + a.descripcion).toLowerCase().includes(texto));
+      if (!visibles.length) {
+        lista.innerHTML = '<p class="vacio">No hay apps que coincidan.</p>';
+        return;
+      }
+      visibles.forEach(a => {
+        const t = document.createElement('a');
+        t.className = 'tarjeta';
+        t.href = a.url;
+        t.target = '_blank';
+        t.rel = 'noopener';
+        t.innerHTML = '<div class="icono"></div><h2></h2><p></p>' + (a.para ? '<span class="etiqueta"></span>' : '');
+        t.querySelector('.icono').textContent = a.icono || '📱';
+        t.querySelector('h2').textContent = a.nombre;
+        t.querySelector('p').textContent = a.descripcion || '';
+        if (a.para) t.querySelector('.etiqueta').textContent = a.para;
+        lista.appendChild(t);
+      });
+    }
+
+    document.getElementById('buscar').addEventListener('input', pintarApps);
+    pintarFiltros();
+    pintarApps();
+  </script>
+</body>
+</html>
